@@ -1,0 +1,5 @@
+[user]
+	user = porter
+	email = porter@mnerv.dev
+[init]
+	defaultBranch = trunk
