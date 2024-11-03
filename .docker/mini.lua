@@ -30,9 +30,6 @@ vim.opt.hidden = true   -- Enable Background buffers
 
 vim.opt.shortmess = vim.opt.shortmess + 'c'
 
--- jk to escape
-vim.api.nvim_set_keymap('i', 'jk', '<Esc>', { noremap = true })
-
 -- Global options
 vim.o.wildmenu = true    -- Command line completion mode
 vim.o.wildmode = 'full'  -- Command line completion mode
@@ -40,11 +37,56 @@ vim.o.wildmode = 'full'  -- Command line completion mode
 -- Turn off line numbers in terminal mode
 vim.api.nvim_command('autocmd TermOpen * setlocal nonu nornu nolist')
 vim.api.nvim_command('autocmd TermEnter * setlocal nonu nornu nolist')
+
+-- Detect file format
+vim.o.fileformats = "unix,dos"
+
+-- Basic Color
+vim.api.nvim_set_hl(0, 'Whitespace', { fg = '#3a3a3a', ctermfg = 237 })
+
+-- Keybinds
+
+-- jk to escape
+vim.keymap.set('i', 'jk', '<Esc>', {
+  noremap = true,
+  silent = true,
+  desc = "Escape insert mode"
+})
+
 -- Escape from insert mode in terminal
-vim.api.nvim_set_keymap('t', '<Esc>', '<C-\\><C-n>', { noremap = true })
+vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', {
+  noremap = true,
+  silent = true,
+  desc = "Escape terminal insert mode"
+})
 
-vim.api.nvim_set_keymap('n', '<space>w', '<C-w>', { noremap = true })
+-- Window navigation prefix
+vim.keymap.set('n', '<space>w', '<C-w>', {
+  noremap = true,
+  silent = true,
+  desc = "Window navigation"
+})
 
-vim.api.nvim_set_keymap('n', '<A-j>', ':m .+1<CR>==', { noremap = true})
-vim.api.nvim_set_keymap('n', '<A-k>', ':m .-2<CR>==', { noremap = true})
+-- Move current line up and down with alt+j and alt+k
+vim.keymap.set('n', '<A-j>', ':m .+1<CR>==', {
+  noremap = true,
+  silent = true,
+  desc = "Move current line down"
+})
+vim.keymap.set('n', '<A-k>', ':m .-2<CR>==', {
+  noremap = true,
+  silent = true,
+  desc = "Move current line up"
+})
 
+-- Move highlighted lines up and down with alt+j and alt+k
+vim.keymap.set('v', '<A-j>', ":m '>+1<CR>gv=gv", {
+  noremap = true,
+  silent = true,
+  desc = "Move selected lines down"
+})
+vim.keymap.set('v', '<A-k>', ":m '<-2<CR>gv=gv", {
+  noremap = true,
+  silent = true,
+  desc = "Move selected lines up"
+})
