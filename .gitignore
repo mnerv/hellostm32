@@ -1,11 +1,14 @@
 # Build output
 *.local
 build
-dist
-dist-ssr
 node_modules
-public/*.tar.gz
-public/pdf
+
+# Toolings
+.tools
+.cache
+
+# Logs
+log.txt
 
 # Images/PDFs
 *.pdf
@@ -21,7 +24,6 @@ misc/*.png
 *.sln
 *.suo
 *.sw?
-.DS_Store
 .idea
 .vscode/*
 
