@@ -31,9 +31,11 @@ int main(void) {
         Error_Handler();
     }
 
+    uint8_t i = 0;
+
     while (true) {
-        printf("Hello, World!\r\n");
-        HAL_Delay(250);
+        printf("Hello, World! %d\r\n", i++);
+        HAL_Delay(125);
     }
 }
 

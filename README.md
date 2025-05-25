@@ -93,22 +93,37 @@ docker run -it --rm -v "$(pwd):/app" hellostm32
 
 ## Flashing
 
-Only notes for now.
-
-You can flash your firmware onto the target MCU using various tools—choose the
+You can flash your firmware onto the target MCU using various tools. Choose the
 one that matches your hardware/debug adapter.
 
-### Using `st-flash`
+### stlink
+
+Download [stlink](https://github.com/stlink-org/stlink).
 
 ```sh
 st-flash write build/firmware.bin 0x8000000
 ```
 
+**Windows**
+
+If you're downloading through the github release page make sure to copy the
+`stlink` directory under `Program Files (x86)` in the zip file to the real
+`Program Files (x86)`.
+
+And you'll also need to download [libusb](https://libusb.info/) and put the
+`dll` either in the same path as `stlink` binaries or expose it in the system
+path environment.
+
+### OpenOCD
+
+```sh
+openocd -f interface/stlink.cfg -f target/stm32u5x.cfg \
+        -c "program firmware.elf verify reset exit"
+```
+
 ## Debugging
 
-Only notes for now.
-
-### Using OpenOCD
+### OpenOCD
 
 ```sh
 openocd -f interface/stlink.cfg -f target/stm32u5x.cfg
@@ -124,18 +139,21 @@ arm-none-eabi-gdb build/firmware.elf
 (gdb) target remote localhost:3333
 (gdb) load
 (gdb) monitor reset init
-(gdb) continue
+(gdb) b main
+(gdb) c
 ```
 
 ### Segger J-Link
 
 ```sh
-JLinkGDBServer -device STM32F407VG -if SWD -speed 4000
+JLinkGDBServer -device STM32U545RET6 -if SWD -speed 4000
 ```
 
 ```sh
 arm-none-eabi-gdb build/firmware.elf
 ```
+
+Follow the same step as the `openocd`.
 
 ## Resources
 

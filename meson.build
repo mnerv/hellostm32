@@ -196,12 +196,13 @@ firmware_elf = executable('firmware.elf',
   install: false
 )
 
-# custom_target('firmware.bin',
-#   input: firmware_elf,  # This makes it depend on the .elf build
-#   output: 'firmware.bin',
-#   command: ['arm-none-eabi-objcopy', '-O', 'binary', '@INPUT@', '@OUTPUT@'],
-#   install: false
-# )
+custom_target('firmware.bin',
+  input: firmware_elf,  # This makes it depend on the .elf build
+  output: 'firmware.bin',
+  command: ['arm-none-eabi-objcopy', '-O', 'binary', '@INPUT@', '@OUTPUT@'],
+  build_by_default: true,
+  install: false
+)
 
 # firmware_ram_elf = executable('firmware_ram.elf',
 #   [
