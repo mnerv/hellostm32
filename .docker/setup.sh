@@ -10,9 +10,6 @@ cp -r .docker/mini.lua ~/.config/nvim/init.lua
 git config --global --add safe.directory /app
 git config --global core.autocrlf false
 
-# Install zsh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" > /dev/null
-
 # Change default shell to zsh
 echo "" | chsh -s $(which zsh)
 

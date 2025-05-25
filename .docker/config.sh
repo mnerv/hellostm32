@@ -7,7 +7,6 @@ curl
 exa
 git
 htop
-neofetch
 neovim
 neovim-doc
 nodejs
