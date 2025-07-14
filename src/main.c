@@ -1,8 +1,12 @@
 #include "stm32u5xx_hal.h"
+#include "stm32u5xx_hal_gpio.h"
+#include "stm32u5xx_hal_rcc.h"
 #include "stm32u5xx_nucleo.h"
+
 #include <stdio.h>
 
 COM_InitTypeDef BspCOMInit;
+TIM_HandleTypeDef htim2;
 
 void Error_Handler(void);
 void SystemClock_Config(void);
@@ -31,11 +35,24 @@ int main(void) {
         Error_Handler();
     }
 
+    GPIO_InitTypeDef gpio_init = {0};
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+
+    gpio_init.Pin   = GPIO_PIN_3;
+    gpio_init.Mode  = GPIO_MODE_OUTPUT_PP;
+    gpio_init.Pull  = GPIO_NOPULL;
+    gpio_init.Speed = GPIO_SPEED_LOW;
+    HAL_GPIO_Init(GPIOB, &gpio_init);
+
     uint8_t i = 0;
 
     while (true) {
-        printf("Hello, World! %d\r\n", i++);
-        HAL_Delay(125);
+        printf("Hello, World! ah shit %d\r\n", i++);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+        HAL_Delay(50);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+        HAL_Delay(50);
     }
 }
 

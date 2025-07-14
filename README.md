@@ -29,7 +29,7 @@ Download arm toolchains for Linux.
 ```sh
 mkdir -p .tools && cd .tools
 wget "https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz"
-tar arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
+tar -xf arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
 ```
 
 Set environment in the current shell environment.
@@ -179,6 +179,7 @@ You'll need an account if you want to download anything from ST.
 ## Hardware
 
   - [NUCLEO-U545RE-Q](https://www.st.com/en/evaluation-tools/nucleo-u545re-q.html)
+    - [UM3062 STM32U3/U5 Nucleo-64 board (MB1841)](https://www.st.com/en/evaluation-tools/nucleo-u545re-q.html#documentation)
 
 **AArch32 bare-metal target (arm-none-eabi)**
 
