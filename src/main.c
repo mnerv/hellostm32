@@ -35,24 +35,80 @@ int main(void) {
         Error_Handler();
     }
 
-    GPIO_InitTypeDef gpio_init = {0};
+    // Init GPIO
     __HAL_RCC_GPIOB_CLK_ENABLE();
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+    __HAL_RCC_TIM2_CLK_ENABLE();
 
-    gpio_init.Pin   = GPIO_PIN_3;
-    gpio_init.Mode  = GPIO_MODE_OUTPUT_PP;
-    gpio_init.Pull  = GPIO_NOPULL;
-    gpio_init.Speed = GPIO_SPEED_LOW;
+    // Init Hardware Timer 2 for PWM
+    htim2.Instance = TIM2;
+    htim2.Init.Prescaler = 0;
+    htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim2.Init.Period = 32;
+    htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    if (HAL_TIM_Base_Init(&htim2) != HAL_OK) {
+        printf("Error initialising Hardware Timer Base: %s:%d\r\n", __FILE__, __LINE__);
+        Error_Handler();
+    }
+
+    TIM_ClockConfigTypeDef clock_src_conf;
+    clock_src_conf.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+    if (HAL_TIM_ConfigClockSource(&htim2, &clock_src_conf) != HAL_OK) {
+        printf("Error configure clock source: %s:%d\r\n", __FILE__, __LINE__);
+        Error_Handler();
+    }
+
+    if (HAL_TIM_PWM_Init(&htim2) != HAL_OK) {
+        printf("Error initialising PWM: %s:%d\r\n", __FILE__, __LINE__);
+        Error_Handler();
+    }
+
+    TIM_MasterConfigTypeDef master_conf;
+    master_conf.MasterOutputTrigger = TIM_TRGO_RESET;
+    master_conf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &master_conf) != HAL_OK) {
+        printf("Error configuring master synchronization: %s:%d\r\n", __FILE__, __LINE__);
+        Error_Handler();
+    }
+
+    TIM_OC_InitTypeDef conf_oc;
+    conf_oc.OCMode = TIM_OCMODE_PWM1;
+    conf_oc.Pulse = 0;
+    conf_oc.OCPolarity = TIM_OCPOLARITY_HIGH;
+    conf_oc.OCFastMode = TIM_OCFAST_DISABLE;
+
+    if (HAL_TIM_PWM_ConfigChannel(&htim2, &conf_oc, TIM_CHANNEL_1) != HAL_OK) {
+        printf("Error configuring PWM Channel 1: %s:%d\r\n", __FILE__, __LINE__);
+        Error_Handler();
+    }
+
+    if (HAL_TIM_PWM_ConfigChannel(&htim2, &conf_oc, TIM_CHANNEL_2) != HAL_OK) {
+        printf("Error configuring PWM Channel 2: %s:%d\r\n", __FILE__, __LINE__);
+        Error_Handler();
+    }
+
+    GPIO_InitTypeDef gpio_init = {0};
+    gpio_init.Pin       = GPIO_PIN_3;               // TIM2_CH2
+    gpio_init.Mode      = GPIO_MODE_AF_PP;
+    gpio_init.Pull      = GPIO_NOPULL;
+    gpio_init.Speed     = GPIO_SPEED_FREQ_HIGH;
+    gpio_init.Alternate = GPIO_AF1_TIM2;
     HAL_GPIO_Init(GPIOB, &gpio_init);
 
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 16);
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 16);
+
     uint8_t i = 0;
+    // uint8_t duty = 0;
 
     while (true) {
         printf("Hello, World! ah shit %d\r\n", i++);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-        HAL_Delay(50);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-        HAL_Delay(50);
+        // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, duty);
+        // duty = (duty + 1) % 12;
+        HAL_Delay(66);
     }
 }
 
