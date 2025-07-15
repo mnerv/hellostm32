@@ -176,6 +176,10 @@ You'll need an account if you want to download anything from ST.
   - [JTAG](https://en.wikipedia.org/wiki/JTAG)
   - [SWD](https://en.wikipedia.org/wiki/JTAG#Similar_interface_standards)
 
+**Tutorials**
+
+  - [GPIO Usage using HAL](https://embeddedexplorer.com/stm32-gpio-tutorial/)
+
 ## Hardware
 
   - [NUCLEO-U545RE-Q](https://www.st.com/en/evaluation-tools/nucleo-u545re-q.html)
