@@ -30,6 +30,8 @@ Download arm toolchains for Linux.
 mkdir -p .tools && cd .tools
 wget "https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz"
 tar -xf arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
+mv ./arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/* .
+rm arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi
 ```
 
 Set environment in the current shell environment.
@@ -58,7 +60,7 @@ unzip arm-gnu-toolchain-14.2.rel1-mingw-w64-x86_64-arm-none-eabi.zip
 ```
 
 Set environment in the current shell environment. The example below uses
-powershell.
+`powershell`.
 
 ```ps1
 $env:PATH = "$(pwd)/.tools/bin;$env:PATH"
