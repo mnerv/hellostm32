@@ -144,7 +144,7 @@ path environment.
 
 ```sh
 openocd -f interface/stlink.cfg -f target/stm32u5x.cfg \
-        -c "program firmware.elf verify reset exit"
+        -c "program build/firmware.elf verify reset exit"
 ```
 
 ## Debugging
@@ -176,7 +176,7 @@ JLinkGDBServer -device STM32U545RET6 -if SWD -speed 4000
 ```
 
 ```sh
-arm-none-eabi-gdb build/firmware.elf
+arm-none-eabi-gdb -ex "target remote localhost:3333" -ex "load" -ex "monitor reset init" -ex "b main" -ex "c" build/firmware.elf
 ```
 
 Follow the same step as the `openocd`.

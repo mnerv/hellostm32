@@ -7,6 +7,14 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(cmake/Targets.cmake)
 include(cmake/MCU.cmake)
 
+add_compile_options(
+    $<$<CONFIG:Debug>:-g3>
+    $<$<CONFIG:Debug>:-Og>
+    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:RelWithDebInfo>:-O2>
+    $<$<CONFIG:RelWithDebInfo>:-g3>
+)
+
 add_subdirectory(lib)
 
 add_exec(fw
