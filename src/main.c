@@ -3,7 +3,9 @@
 #include "stm32u5xx_hal_rcc.h"
 #include "stm32u5xx_nucleo.h"
 
+#include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 COM_InitTypeDef BspCOMInit;
 TIM_HandleTypeDef htim2;
@@ -12,6 +14,57 @@ void Error_Handler(void);
 void SystemClock_Config(void);
 static void SystemPower_Config(void);
 static void MX_ICACHE_Init(void);
+
+// ---------------------------------------------------------------------------
+// Morse code
+// ---------------------------------------------------------------------------
+
+#define UNIT_MS       200u   // one dot length in milliseconds
+#define DOT_MS        (1u * UNIT_MS)
+#define DASH_MS       (3u * UNIT_MS)
+#define SYMBOL_GAP_MS (1u * UNIT_MS)  // gap between dots/dashes within a letter
+#define LETTER_GAP_MS (3u * UNIT_MS)  // gap between letters
+#define WORD_GAP_MS   (7u * UNIT_MS)  // gap between words
+
+// Each letter is a null-terminated string of '.' and '-'.
+// Index 0 = 'A', index 25 = 'Z'.
+static const char *const MORSE_TABLE[26] = {
+    ".-",   "-...", "-.-.", "-..",  ".",    // A-E
+    "..-.", "--.",  "....", "..",   ".---", // F-J
+    "-.-",  ".-..", "--",   "-.",   "---",  // K-O
+    ".--.", "--.-", ".-.",  "...",  "-",    // P-T
+    "..-",  "...-", ".--",  "-..-", "-.--", // U-Y
+    "--..",                                  // Z
+};
+
+static void morse_flash(const char *text) {
+    for (size_t i = 0; text[i] != '\0'; i++) {
+        char c = text[i];
+
+        if (c == ' ') {
+            HAL_Delay(WORD_GAP_MS);
+            continue;
+        }
+
+        // Convert to uppercase index
+        if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
+        if (c < 'A' || c > 'Z') continue;
+
+        const char *symbols = MORSE_TABLE[(uint8_t)(c - 'A')];
+        printf("%c: %s\r\n", c, symbols);
+        for (size_t j = 0; symbols[j] != '\0'; j++) {
+            BSP_LED_On(LED_GREEN);
+            HAL_Delay(symbols[j] == '.' ? DOT_MS : DASH_MS);
+            BSP_LED_Off(LED_GREEN);
+
+            if (symbols[j + 1] != '\0')
+                HAL_Delay(SYMBOL_GAP_MS);
+        }
+
+        if (text[i + 1] != '\0' && text[i + 1] != ' ')
+            HAL_Delay(LETTER_GAP_MS);
+    }
+}
 
 int main(void) {
     HAL_Init();
@@ -101,14 +154,10 @@ int main(void) {
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 16);
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 16);
 
-    uint8_t i = 0;
-    // uint8_t duty = 0;
-
     while (true) {
-        printf("Hello, World! ah shit %d\r\n", i++);
-        // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, duty);
-        // duty = (duty + 1) % 12;
-        HAL_Delay(66);
+        morse_flash("BACK HOME");
+        printf("\r\n");
+        HAL_Delay(WORD_GAP_MS);
     }
 }
 
@@ -202,4 +251,3 @@ void SysTick_Handler(void) {
 void EXTI13_IRQHandler(void) {
     BSP_PB_IRQHandler(BUTTON_USER);
 }
-

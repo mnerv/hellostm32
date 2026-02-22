@@ -26,7 +26,11 @@ target_link_options(fw PRIVATE
     -T${_LINKER_SCRIPT}
     -Wl,-Map=${CMAKE_BINARY_DIR}/output.map
 )
-set_target_properties(fw PROPERTIES LINK_DEPENDS ${_LINKER_SCRIPT})
+set_target_properties(fw PROPERTIES
+    OUTPUT_NAME   firmware
+    SUFFIX        .elf
+    LINK_DEPENDS  ${_LINKER_SCRIPT}
+)
 
 # firmware.bin — raw binary for flashing
 add_custom_command(
