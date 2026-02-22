@@ -1,26 +1,64 @@
 # HelloSTM32
 
-Learning how to use STM32 MCUs by setting up a build environment with Meson,
-downloading the ARM compiler, exploring the STM32CubeIDE directory structure,
-and modifying it to suit personal needs and style.
+Learning how to use STM32 MCUs by setting up a build environment with CMake
+and Meson, downloading the ARM compiler, exploring the STM32CubeIDE directory
+structure, and modifying it to suit personal needs and style.
 
 ## Development
 
-Guide to setting up development tools: follow your operating-system–specific
-instructions first, then proceed with the Meson guide.
+### CMake
 
-### meson
+The CMake build automatically downloads the ARM GNU toolchain into `.tools/` on
+first configure if it is not already present. No manual toolchain setup needed.
 
-Use `meson` to configure your build directory and `ninja` to compile:
+Configure:
 
 ```sh
-meson setup build --cross-file toolchain/cross.ini
+cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-toolchain.cmake
 ```
+
+Build:
 
 ```sh
 ninja -C build
 ```
 
+To target a different MCU (default is `STM32U545xx`):
+
+```sh
+cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-toolchain.cmake \
+      -DTARGET_MCU=STM32H503xx
+```
+
+Supported MCUs are defined in `cmake/MCU.cmake`. Add an `elseif` block there
+to support a new device.
+
+**Optional**: Symlink `compile_commands.json` to the root directory for
+`clangd`/`ccls`.
+
+**Linux**
+
+```sh
+ln -sfn ./build/compile_commands.json .
+```
+
+**Windows (requires admin)**
+
+```ps1
+New-Item -ItemType SymbolicLink -Path "compile_commands.json" -Target "./build/compile_commands.json"
+```
+
+### Meson
+
+Use `meson` to configure your build directory and `ninja` to compile:
+
+```sh
+meson setup build --cross-file toolchain/cross.ini
+ninja -C build
+```
+
+The Meson build requires the ARM toolchain to be on `PATH`. See the
+platform-specific sections below for how to set that up.
 
 ### Linux
 
@@ -40,13 +78,6 @@ Set environment in the current shell environment.
 export PATH="$(pwd)/.tools/bin:$PATH"
 ```
 
-**Optional**: Symlink `compile_commands.json` to root directory for
-`clangd`/`ccls`.
-
-```sh
-ln -sfn ./build/compile_commands.json .
-```
-
 ### Windows
 
 Download arm toolchains for Windows.
@@ -64,13 +95,6 @@ Set environment in the current shell environment. The example below uses
 
 ```ps1
 $env:PATH = "$(pwd)/.tools/bin;$env:PATH"
-```
-
-**Optional**: Symlink `compile_commands.json` to root directory for
-`clangd`/`ccls` for windows. Requires **admin**.
-
-```ps1
-New-Item -ItemType SymbolicLink -Path "compile_commands.json" -Target "./build/compile_commands.json"
 ```
 
 ### Docker Container
@@ -188,4 +212,3 @@ You'll need an account if you want to download anything from ST.
     - [UM3062 STM32U3/U5 Nucleo-64 board (MB1841)](https://www.st.com/en/evaluation-tools/nucleo-u545re-q.html#documentation)
 
 **AArch32 bare-metal target (arm-none-eabi)**
-
