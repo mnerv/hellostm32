@@ -1,48 +1,36 @@
 cmake_minimum_required(VERSION 3.28)
-project(hellostm32 VERSION 0.0.0)
+project(hellostm32 VERSION 0.0.0 LANGUAGES C CXX ASM)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)  # Group CMake targets inside a folder
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)         # Generate compile_commands.json for language servers
-# list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/deps")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-set(INC_FILES "")
-set(SRC_FILES
-    src/main.cpp
-    src/syscall.cpp
-    src/sysmeme.cpp
+include(cmake/Targets.cmake)
+include(cmake/MCU.cmake)
+
+add_subdirectory(lib)
+
+add_exec(fw
+    "src/main.c"
+    "src/syscalls.c"
+    "src/sysmem.c"
+    INC ${PROJECT_SOURCE_DIR}/src
+    LIBS bsp hal cmsis
 )
-add_executable(fw ${INC_FILES} ${SRC_FILES})
-target_include_directories(fw
-    PRIVATE
-    ${PROJECT_SOURCE_DIR}/src
+
+# startup must be linked whole so Reset_Handler and the vector table are never
+# dropped by --gc-sections (nothing in application code references them directly)
+target_link_libraries(fw PRIVATE -Wl,--whole-archive startup -Wl,--no-whole-archive)
+
+set(_LINKER_SCRIPT "${MCU_LINKER_SCRIPT}")
+target_link_options(fw PRIVATE
+    -T${_LINKER_SCRIPT}
+    -Wl,-Map=${CMAKE_BINARY_DIR}/output.map
 )
-target_compile_features(fw PRIVATE c_std_23 cxx_std_23)
-target_compile_options(fw
-    PRIVATE
-    -Wall
-    -Wextra
-    -Wconversion
-    -Wpedantic
-    -Wshadow
-    -Werror
-    # hardware flags
-    -mcpu=cortex-m33
-    -mfloat-abi=hard   # FPU is hardware
-    -mfpu=fpv5-sp-d16  # fp version 5, single precision, 16-double-precision-register
-    -mthumb
-    -nostdlib
-    # cpp flags
-    -fno-rtti
-    -fno-exceptions
-    -fno-threadsafe-statics
+set_target_properties(fw PROPERTIES LINK_DEPENDS ${_LINKER_SCRIPT})
+
+# firmware.bin — raw binary for flashing
+add_custom_command(
+    TARGET fw POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:fw> ${CMAKE_BINARY_DIR}/firmware.bin
+    COMMENT "Generating firmware.bin"
 )
-target_link_options(fw PRIVATE 
-    -mcpu=cortex-m33
-    -mthumb
-    -mfloat-abi=hard
-    -mfpu=fpv5-sp-d16
-)
-target_compile_definitions(fw
-    PRIVATE
-    ""
-)
-source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" FILES ${INC_FILES} ${SRC_FILES})
