@@ -7,7 +7,7 @@
 # Usage:
 #   cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-toolchain.cmake
 
-set(TOOLCHAIN_VERSION "14.2.rel1")
+set(TOOLCHAIN_VERSION "15.2.rel1")
 set(TOOLCHAIN_PREFIX  "arm-none-eabi")
 
 # Resolve .tools/ relative to this file's location (cmake/../.tools)
