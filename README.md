@@ -151,23 +151,103 @@ openocd -f interface/stlink.cfg -f target/stm32u5x.cfg \
 
 ### OpenOCD
 
+CMake targets are provided for all common workflows:
+
+```sh
+cmake --build build --target flash   # build and flash firmware
+cmake --build build --target debug   # start OpenOCD GDB server on :3333
+cmake --build build --target gdb     # connect arm-none-eabi-gdb to :3333
+```
+
+`debug` and `gdb` are meant to run in separate terminals — start `debug`
+first, then `gdb`.
+
+Equivalent manual commands:
+
 ```sh
 openocd -f interface/stlink.cfg -f target/stm32u5x.cfg
 ```
 
 ```sh
-arm-none-eabi-gdb build/firmware.elf
+arm-none-eabi-gdb \
+  -ex "target remote :3333" \
+  -ex "load" \
+  -ex "monitor reset init" \
+  build/firmware.elf
 ```
 
-`gdb`
+### Zed
+
+Zed's built-in debugger connects to OpenOCD via GDB. Requires a GDB build
+with DAP support (GDB 14+) and multi-architecture support. Install
+`gdb-multiarch` for your platform:
+
+**Windows** — [MSYS2](https://www.msys2.org) UCRT64:
 
 ```sh
-(gdb) target remote localhost:3333
-(gdb) load
-(gdb) monitor reset init
-(gdb) b main
-(gdb) c
+pacman -S mingw-w64-ucrt-x86_64-gdb-multiarch
 ```
+
+**Linux**:
+
+```sh
+sudo apt install gdb-multiarch
+```
+
+**macOS**:
+
+```sh
+brew install gdb
+```
+
+Create `.zed/settings.json` with the path to the installed binary:
+
+| Platform | Path                                     |
+|----------|------------------------------------------|
+| Windows  | `C:/msys64/ucrt64/bin/gdb-multiarch.exe` |
+| Linux    | `/usr/bin/gdb-multiarch`                 |
+| macOS    | `/opt/homebrew/bin/gdb`                  |
+
+```json
+{
+  "dap": {
+    "GDB": {
+      "binary": "<path from table above>",
+    },
+  },
+}
+```
+
+Create `.zed/debug.json`:
+
+```json
+[
+  {
+    "label": "Debug firmware (OpenOCD)",
+    "adapter": "GDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/build/firmware.elf",
+    "gdb_args": [
+      "-ex",
+      "target remote :3333",
+      "-ex",
+      "load",
+      "-ex",
+      "monitor reset init",
+    ],
+  },
+]
+```
+
+Start OpenOCD first, then launch the debugger in Zed:
+
+```sh
+# Terminal — keep this running
+cmake --build build --target debug
+```
+
+Then use **Run > Start Debugging** or the debug panel and select
+**Debug firmware (OpenOCD)**.
 
 ### Segger J-Link
 
