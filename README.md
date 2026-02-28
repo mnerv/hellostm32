@@ -1,8 +1,8 @@
 # HelloSTM32
 
-Learning how to use STM32 MCUs by setting up a build environment with CMake
-and Meson, downloading the ARM compiler, exploring the STM32CubeIDE directory
-structure, and modifying it to suit personal needs and style.
+Learning how to use STM32 MCUs by setting up a build environment with CMake,
+downloading the ARM compiler, exploring the STM32CubeIDE directory structure,
+and modifying it to suit personal needs and style.
 
 ## Development
 
@@ -46,55 +46,6 @@ ln -sfn ./build/compile_commands.json .
 
 ```ps1
 New-Item -ItemType SymbolicLink -Path "compile_commands.json" -Target "./build/compile_commands.json"
-```
-
-### Meson
-
-Use `meson` to configure your build directory and `ninja` to compile:
-
-```sh
-meson setup build --cross-file toolchain/cross.ini
-ninja -C build
-```
-
-The Meson build requires the ARM toolchain to be on `PATH`. See the
-platform-specific sections below for how to set that up.
-
-### Linux
-
-Download arm toolchains for Linux.
-
-```sh
-mkdir -p .tools && cd .tools
-wget "https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz"
-tar -xf arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
-mv ./arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/* .
-rm arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi
-```
-
-Set environment in the current shell environment.
-
-```sh
-export PATH="$(pwd)/.tools/bin:$PATH"
-```
-
-### Windows
-
-Download arm toolchains for Windows.
-
-```ps1
-mkdir .tools; cd .tools
-Invoke-WebRequest `
-  -Uri "https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-mingw-w64-x86_64-arm-none-eabi.zip" `
-  -OutFile "arm-gnu-toolchain-14.2.rel1-mingw-w64-x86_64-arm-none-eabi.zip"
-unzip arm-gnu-toolchain-14.2.rel1-mingw-w64-x86_64-arm-none-eabi.zip
-```
-
-Set environment in the current shell environment. The example below uses
-`powershell`.
-
-```ps1
-$env:PATH = "$(pwd)/.tools/bin;$env:PATH"
 ```
 
 ### Docker Container
