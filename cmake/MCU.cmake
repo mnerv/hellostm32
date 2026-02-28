@@ -46,6 +46,7 @@ if(TARGET_MCU STREQUAL "STM32U545xx")
         startup/system_stm32u5xx.c
     )
     _lib_path(MCU_LINKER_SCRIPT "link/STM32U545RETXQ_FLASH.ld")
+    set(MCU_OPENOCD_TARGET "target/stm32u5x.cfg")
 
 # ------------------------------------------------------------------------------
 elseif(TARGET_MCU STREQUAL "STM32H503xx")
@@ -70,6 +71,7 @@ elseif(TARGET_MCU STREQUAL "STM32H503xx")
         startup/system_stm32h5xx.c
     )
     _lib_path(MCU_LINKER_SCRIPT "link/STM32H503CBTX_FLASH.ld")
+    set(MCU_OPENOCD_TARGET "target/stm32h5x.cfg")
 
 # ------------------------------------------------------------------------------
 else()

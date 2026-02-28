@@ -46,3 +46,19 @@ add_custom_command(
     COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:fw> ${CMAKE_BINARY_DIR}/firmware.bin
     COMMENT "Generating firmware.bin"
 )
+
+include(cmake/OpenOCD.cmake)
+
+# arm-none-eabi-gdb is in the same bin/ directory as objcopy.
+cmake_path(GET CMAKE_OBJCOPY PARENT_PATH _toolchain_bin)
+add_custom_target(gdb
+    COMMAND "${_toolchain_bin}/arm-none-eabi-gdb${CMAKE_HOST_EXECUTABLE_SUFFIX}"
+        -ex "target remote :3333"
+        -ex "load"
+        -ex "monitor reset init"
+        $<TARGET_FILE:fw>
+    DEPENDS fw
+    COMMENT "arm-none-eabi-gdb — requires 'debug' target running in another terminal"
+    USES_TERMINAL
+    VERBATIM
+)
