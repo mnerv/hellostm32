@@ -5,7 +5,9 @@
 # OPENOCD_URL in the cache to override.
 #
 # Cache variables:
-#   OPENOCD_URL       — Download URL for the xpack OpenOCD archive
+#   OPENOCD_VERSION   — xpack OpenOCD version to download (default: 0.12.0-7)
+#                       Releases: https://github.com/xpack-dev-tools/openocd-xpack/releases
+#   OPENOCD_URL       — Full URL override; auto-derived from OPENOCD_VERSION if unset
 #   OPENOCD_INTERFACE — OpenOCD interface config (relative to scripts dir)
 #
 # Usage:
@@ -15,17 +17,20 @@
 include(FetchContent)
 
 # ---------- platform detection ------------------------------------------------
+set(OPENOCD_VERSION "0.12.0-7" CACHE STRING "xpack OpenOCD version to download")
+
 if(NOT DEFINED CACHE{OPENOCD_URL})
     # Use host variables — CMAKE_SYSTEM_NAME is "Generic" for bare-metal targets.
+    set(_ocd_base "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v${OPENOCD_VERSION}/xpack-openocd-${OPENOCD_VERSION}")
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-        set(_ocd_url "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-win32-x64.zip")
+        set(_ocd_url "${_ocd_base}-win32-x64.zip")
     elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
-        set(_ocd_url "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-linux-x64.tar.gz")
+        set(_ocd_url "${_ocd_base}-linux-x64.tar.gz")
     elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
         if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
-            set(_ocd_url "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-darwin-arm64.tar.gz")
+            set(_ocd_url "${_ocd_base}-darwin-arm64.tar.gz")
         else()
-            set(_ocd_url "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-darwin-x64.tar.gz")
+            set(_ocd_url "${_ocd_base}-darwin-x64.tar.gz")
         endif()
     else()
         message(FATAL_ERROR
