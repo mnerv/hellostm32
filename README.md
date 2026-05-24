@@ -1,8 +1,10 @@
 # HelloSTM32
 
-Learning how to use STM32 MCUs by setting up a build environment with CMake,
-downloading the ARM compiler, exploring the STM32CubeIDE directory structure,
-and modifying it to suit personal needs and style.
+Learning STM32 MCUs through a C23 project wired for test-driven development
+using [Unity](https://github.com/ThrowTheSwitch/Unity) and
+[CMock](https://github.com/ThrowTheSwitch/CMock). All dependencies are fetched
+automatically via CMake `FetchContent` — no manual installation required beyond
+the tools listed below.
 
 ## Development
 
@@ -67,6 +69,27 @@ Run container:
 ```sh
 docker run -it --rm -v "$(pwd):/app" hellostm32
 ```
+
+### Testing
+
+Logic modules are unit-tested on the host with Unity + CMock, without any
+ARM toolchain. HAL-dependent code is isolated in `src/hal/` and `src/sys/`;
+all logic modules are platform-free.
+
+Run the test suite:
+
+```sh
+cmake -B build/test && cmake --build build/test --target check
+```
+
+Generate a coverage report (requires Clang):
+
+```sh
+cmake -B build/cov -DENABLE_COVERAGE=ON && cmake --build build/cov --target coverage
+```
+
+On Windows, add `-G Ninja` to the coverage configure step so CMake selects
+Clang instead of MSVC (MSVC does not support `--coverage`).
 
 ## Flashing
 
