@@ -66,3 +66,10 @@ yarn-error.log*
 # Xcode
 *.xcworkspace
 *.xcodeproj
+
+
+# AI Agent Harness
+.claude
+
+# Zed
+.zed

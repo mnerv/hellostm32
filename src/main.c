@@ -1,11 +1,12 @@
+#include <stddef.h>
+#include <stdio.h>
+
 #include "stm32u5xx_hal.h"
 #include "stm32u5xx_hal_gpio.h"
 #include "stm32u5xx_hal_rcc.h"
 #include "stm32u5xx_nucleo.h"
 
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
+#include "morse.h"
 
 COM_InitTypeDef BspCOMInit;
 TIM_HandleTypeDef htim2;
@@ -15,29 +16,14 @@ void SystemClock_Config(void);
 static void SystemPower_Config(void);
 static void MX_ICACHE_Init(void);
 
-// ---------------------------------------------------------------------------
-// Morse code
-// ---------------------------------------------------------------------------
-
-#define UNIT_MS       200u   // one dot length in milliseconds
+#define UNIT_MS       200u
 #define DOT_MS        (1u * UNIT_MS)
 #define DASH_MS       (3u * UNIT_MS)
-#define SYMBOL_GAP_MS (1u * UNIT_MS)  // gap between dots/dashes within a letter
-#define LETTER_GAP_MS (3u * UNIT_MS)  // gap between letters
-#define WORD_GAP_MS   (7u * UNIT_MS)  // gap between words
+#define SYMBOL_GAP_MS (1u * UNIT_MS)
+#define LETTER_GAP_MS (3u * UNIT_MS)
+#define WORD_GAP_MS   (7u * UNIT_MS)
 
-// Each letter is a null-terminated string of '.' and '-'.
-// Index 0 = 'A', index 25 = 'Z'.
-static const char *const MORSE_TABLE[26] = {
-    ".-",   "-...", "-.-.", "-..",  ".",    // A-E
-    "..-.", "--.",  "....", "..",   ".---", // F-J
-    "-.-",  ".-..", "--",   "-.",   "---",  // K-O
-    ".--.", "--.-", ".-.",  "...",  "-",    // P-T
-    "..-",  "...-", ".--",  "-..-", "-.--", // U-Y
-    "--..",                                  // Z
-};
-
-static void morse_flash(const char *text) {
+static void morse_flash(char const *text) {
     for (size_t i = 0; text[i] != '\0'; i++) {
         char c = text[i];
 
@@ -46,11 +32,9 @@ static void morse_flash(const char *text) {
             continue;
         }
 
-        // Convert to uppercase index
-        if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
-        if (c < 'A' || c > 'Z') continue;
+        char const *symbols = morse_encode(c);
+        if (!symbols) continue;
 
-        const char *symbols = MORSE_TABLE[(uint8_t)(c - 'A')];
         printf("%c: %s\r\n", c, symbols);
         for (size_t j = 0; symbols[j] != '\0'; j++) {
             BSP_LED_On(LED_GREEN);

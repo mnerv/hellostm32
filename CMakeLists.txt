@@ -1,64 +1,108 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.25)
 project(hellostm32 VERSION 0.0.0 LANGUAGES C CXX ASM)
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)  # Group CMake targets inside a folder
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)         # Generate compile_commands.json for language servers
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-include(cmake/Targets.cmake)
-include(cmake/MCU.cmake)
-
-add_compile_options(
-    $<$<CONFIG:Debug>:-g3>
-    $<$<CONFIG:Debug>:-Og>
-    $<$<CONFIG:Release>:-O2>
-    $<$<CONFIG:RelWithDebInfo>:-O2>
-    $<$<CONFIG:RelWithDebInfo>:-g3>
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+list(APPEND CMAKE_MODULE_PATH
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/deps"
 )
 
-add_subdirectory(lib)
+if (CMAKE_CROSSCOMPILING)
+  # ---- Firmware build (arm-none-eabi) ----
 
-add_exec(fw
-    "src/main.c"
-    "src/syscalls.c"
-    "src/sysmem.c"
-    INC ${PROJECT_SOURCE_DIR}/src
-    LIBS bsp hal cmsis
-)
+  include(cmake/Targets.cmake)
+  include(cmake/MCU.cmake)
 
-# startup must be linked whole so Reset_Handler and the vector table are never
-# dropped by --gc-sections (nothing in application code references them directly)
-target_link_libraries(fw PRIVATE -Wl,--whole-archive startup -Wl,--no-whole-archive)
+  add_compile_options(
+        $<$<CONFIG:Debug>:-g3>
+        $<$<CONFIG:Debug>:-Og>
+        $<$<CONFIG:Release>:-O2>
+        $<$<CONFIG:RelWithDebInfo>:-O2>
+        $<$<CONFIG:RelWithDebInfo>:-g3>
+    )
 
-set(_LINKER_SCRIPT "${MCU_LINKER_SCRIPT}")
-target_link_options(fw PRIVATE
-    -T${_LINKER_SCRIPT}
-    -Wl,-Map=${CMAKE_BINARY_DIR}/output.map
-)
-set_target_properties(fw PROPERTIES
-    OUTPUT_NAME   firmware
-    SUFFIX        .elf
-    LINK_DEPENDS  ${_LINKER_SCRIPT}
-)
+  add_subdirectory(lib)
 
-# firmware.bin — raw binary for flashing
-add_custom_command(
-    TARGET fw POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:fw> ${CMAKE_BINARY_DIR}/firmware.bin
-    COMMENT "Generating firmware.bin"
-)
+  add_library(morse STATIC src/morse.c)
+  target_include_directories(morse PUBLIC "${PROJECT_SOURCE_DIR}/src")
 
-include(cmake/OpenOCD.cmake)
+  add_library(i2c_bus STATIC src/hal/i2c_bus.c)
+  target_include_directories(i2c_bus PUBLIC "${PROJECT_SOURCE_DIR}/src/hal")
+  target_link_libraries(i2c_bus PUBLIC hal)
 
-# arm-none-eabi-gdb is in the same bin/ directory as objcopy.
-cmake_path(GET CMAKE_OBJCOPY PARENT_PATH _toolchain_bin)
-add_custom_target(gdb
-    COMMAND "${_toolchain_bin}/arm-none-eabi-gdb${CMAKE_HOST_EXECUTABLE_SUFFIX}"
-        -ex "target remote :3333"
-        -ex "load"
-        -ex "monitor reset init"
-        $<TARGET_FILE:fw>
-    DEPENDS fw
-    COMMENT "arm-none-eabi-gdb — requires 'debug' target running in another terminal"
-    USES_TERMINAL
-    VERBATIM
-)
+  add_library(bno08x STATIC src/drivers/bno08x.c)
+  target_include_directories(bno08x PUBLIC "${PROJECT_SOURCE_DIR}/src/drivers")
+  target_link_libraries(bno08x PUBLIC i2c_bus)
+
+  add_library(uart_log STATIC src/hal/uart_log.c)
+  target_include_directories(uart_log PUBLIC "${PROJECT_SOURCE_DIR}/src/hal")
+  target_link_libraries(uart_log PUBLIC hal)
+
+  add_exec(fw
+        "src/main.c"
+        "src/sys/syscalls.c"
+        "src/sys/sysmem.c"
+        INC ${PROJECT_SOURCE_DIR}/src/hal
+            ${PROJECT_SOURCE_DIR}/src/drivers
+        LIBS morse bsp hal cmsis
+    )
+
+  target_link_libraries(fw PRIVATE -Wl,--whole-archive startup -Wl,--no-whole-archive)
+
+  set(_LINKER_SCRIPT "${MCU_LINKER_SCRIPT}")
+  target_link_options(fw PRIVATE
+        -T${_LINKER_SCRIPT}
+        -Wl,-Map=${CMAKE_BINARY_DIR}/output.map
+        -u _printf_float
+    )
+  set_target_properties(fw PROPERTIES
+        OUTPUT_NAME   firmware
+        SUFFIX        .elf
+        LINK_DEPENDS  ${_LINKER_SCRIPT}
+    )
+
+  add_custom_command(
+        TARGET fw POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:fw> ${CMAKE_BINARY_DIR}/firmware.bin
+        COMMENT "Generating firmware.bin"
+    )
+
+  include(cmake/OpenOCD.cmake)
+
+  cmake_path(GET CMAKE_OBJCOPY PARENT_PATH _toolchain_bin)
+  add_custom_target(gdb
+        COMMAND "${_toolchain_bin}/arm-none-eabi-gdb${CMAKE_HOST_EXECUTABLE_SUFFIX}"
+            -ex "target remote :3333"
+            -ex "load"
+            -ex "monitor reset init"
+            $<TARGET_FILE:fw>
+        DEPENDS fw
+        COMMENT "arm-none-eabi-gdb — requires 'debug' target running in another terminal"
+        USES_TERMINAL
+        VERBATIM
+    )
+
+else()
+  # ---- Host test build ----
+
+  include(Platform)
+  include(Flags)
+  include(Coverage)
+
+  add_library(morse STATIC src/morse.c)
+  target_include_directories(morse PUBLIC "${PROJECT_SOURCE_DIR}/src")
+  target_compile_features(morse PRIVATE c_std_23)
+  target_compile_options(morse PRIVATE ${BASE_OPTIONS})
+
+  add_library(bno08x STATIC src/drivers/bno08x.c)
+  target_include_directories(bno08x PUBLIC "${PROJECT_SOURCE_DIR}/src/drivers")
+  target_include_directories(bno08x SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/src/hal")
+  target_compile_features(bno08x PRIVATE c_std_23)
+  target_compile_options(bno08x PRIVATE ${BASE_OPTIONS})
+
+  enable_testing()
+  add_subdirectory(tests)
+
+  include(IDE)
+endif()
