@@ -4,33 +4,54 @@ Guidance for AI agents working in this repository.
 
 ## Project Summary
 
-Firmware for NUCLEO-U545RE-Q (STM32U545RE) that reads orientation data from
-a BNO08X IMU over I2C using the SHTP protocol. The I2C bus is abstracted
-behind `src/i2c_bus.h` so the sensor driver (`src/bno08x.c`) can be unit-tested
-on the host with Unity + CMock, without any ARM toolchain.
+A TDD-first STM32 firmware base targeting the NUCLEO-U545RE-Q
+(STM32U545RE). The goal is a clean foundation that is easy to retarget
+and grow with confidence: HAL-dependent code is isolated in `src/hal/`
+and `src/sys/`, while all logic modules are platform-free and
+unit-tested on the host with Unity + CMock, without any ARM toolchain.
+
+Current modules:
+
+- `src/morse.{h,c}` — Morse encoding; drives LED_GREEN in `main.c`
+- `src/drivers/bno08x.c` — BNO08X SHTP driver over I2C; fully tested,
+  not yet wired into the main application
 
 ## Target Hardware
+
+The project is structured to make retargeting straightforward. The
+current reference target is:
 
 - MCU: STM32U545RE, LQFP64, Cortex-M33
 - Board: NUCLEO-U545RE-Q
 - IMU: BNO08X (CEVA / Hillcrest), I2C address 0x4A (SA0=GND)
 
+HAL-dependent code is isolated in `src/hal/` and `src/sys/`. Logic
+modules (`src/morse.c`, `src/drivers/bno08x.c`) have no platform
+dependencies and compile on any host.
+
 ## Key Constraints
 
-- The I2C timing constant in `src/i2c_bus.c` (`0x00303D5B`) is calibrated for
-  100 kHz with the default 4 MHz MSI clock (`RCC_MSIRANGE_4`). Recalculate
-  with STM32CubeMX if the clock tree changes.
-- PS0 and PS1 on the BNO08X must both be tied to GND to select I2C mode.
-  Any other combination selects UART or SPI.
-- `bno08x.c` must not include any HAL headers. All hardware access goes
-  through `i2c_bus.h` so CMock can replace it in tests.
+- The I2C timing constant in `src/hal/i2c_bus.c` (`0x00303D5B`) is
+  calibrated for 100 kHz with the default 4 MHz MSI clock
+  (`RCC_MSIRANGE_4`). Recalculate with STM32CubeMX if the clock
+  tree changes.
+- PS0 and PS1 on the BNO08X must both be tied to GND to select I2C
+  mode. Any other combination selects UART or SPI.
+- `src/drivers/bno08x.c` must not include any HAL headers. All
+  hardware access goes through `src/hal/i2c_bus.h` so CMock can
+  replace it in tests.
+- `src/morse.c` must not include any HAL headers. It is pure logic
+  with no platform dependencies.
 
 ## Peripheral Map
 
-| Peripheral | Role                                    |
-| ---------- | --------------------------------------- |
-| I2C1       | BNO08X communication (PB6 SCL, PB7 SDA) |
-| USART1     | printf output via ST-Link VCP (PA9 TX)  |
+| Peripheral  | Role                                    |
+| ----------- | --------------------------------------- |
+| COM1/USART1 | printf output via ST-Link VCP           |
+| LED_GREEN   | Morse code output (PA5)                 |
+| TIM2        | PWM output (PB3, TIM2_CH2)              |
+| BUTTON_USER | User button interrupt (PC13, EXTI13)    |
+| I2C1        | BNO08X communication (PB6 SCL, PB7 SDA) |
 
 ## Build Targets
 
@@ -143,7 +164,9 @@ Rules marked **[C++ only]** apply only to `.cpp` and `.hpp` files.
 - **Naming:** `SCREAMING_SNAKE_CASE` only for macros and constants
 - No STM32CubeMX. Peripheral init is written by hand in source files.
 - No dynamic memory allocation.
-- `src/bno08x.c` depends only on `src/i2c_bus.h` — keep it that way.
+- `src/drivers/bno08x.c` depends only on `src/hal/i2c_bus.h` — keep
+  it that way.
+- `src/morse.c` has no platform dependencies — keep it that way.
 
 Include order for `.c`/`.h` files:
 
@@ -208,7 +231,7 @@ in HH:MM:SS.mmm format, updating every 10ms with color output.
 - Do not use em dashes (`--`). Use a colon or rewrite the sentence.
 - Each shell command gets its own fenced code block; do **not** combine
   multiple commands into one block. Precede each block with a short
-  plain-text label describing what the command does:
+  plain-text label describing what the command does.
 - README.md: hardware wiring, pin assignments, build instructions.
   Keep it up to date when changing peripheral assignments.
 - This file (`AGENTS.md`) follows its own rules.
